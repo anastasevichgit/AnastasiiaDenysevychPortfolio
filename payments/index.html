@@ -207,6 +207,7 @@ body.th3{--bg:#f6f6f3;--paper:#fff;--ink:#22252b;--mute:#7d818a;--line:#e6e6e1;-
 /* шапка: «Кейс» і «Роль» в одному стилі */
 .meta{display:flex;gap:20px;flex-wrap:wrap}
 .meta.role{margin-top:18px}
+.t.hero>.meta:first-child{margin-bottom:18px}
 .meta.role .brand{margin-right:6px}
 .meta .nw{white-space:nowrap}
 .meta .lbl::before{content:"● ";color:var(--acc)}
@@ -284,12 +285,24 @@ body.th3{--bg:#f6f6f3;--paper:#fff;--ink:#22252b;--mute:#7d818a;--line:#e6e6e1;-
 .th3 .tl.real .sn{opacity:0}
 
 @media(max-width:760px){
+  .th3 .t h3{margin-top:10px}
   .th3 section{padding:28px 20px;border-radius:20px}.th3 .t.hero{padding:28px 20px}
   .th3 .bub{white-space:normal}
   .th3 .tl{padding-left:96px}.th3 .tl::before{left:82px}.th3 .sn{display:none}
   .th3 .cmp,.th3 .cmp.cv3{grid-template-columns:120px 1fr}.cv3 .hd{font-size:14px}.cmp .hd,.cmp .cell{padding:0 10px;font-size:12px}.cv2{gap:6px}
   .quotes{grid-template-columns:1fr}
   .th3 .bento{grid-template-columns:1fr 1fr}.th3 .t.claim,.th3 .t.eco{grid-column:auto}.th3 .t.hero{grid-column:span 2;grid-row:auto;min-height:220px}
+}
+
+/* таблиця на телефоні: без колонки питань, питання — підписом у рядку */
+.cmp .mq{display:none}
+@media(max-width:760px){
+  .th3 .cmp,.th3 .cmp.cv3{grid-template-columns:1fr}
+  .cmp .qcol{display:none}
+  .cmp .area .cell{height:92px;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:0 14px;font-size:13px}
+  .cmp .area .cell span{-webkit-line-clamp:3}
+  .cmp .mq{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--heroMute);text-transform:none}
+  .cv3 .layer.before .hd{padding-right:50%}.cv3 .layer.after .hd{padding-left:50%}
 }
 </style></head><body class="th3">
 <div class="wrap">
@@ -304,7 +317,7 @@ body.th3{--bg:#f6f6f3;--paper:#fff;--ink:#22252b;--mute:#7d818a;--line:#e6e6e1;-
   <!-- 2 · ПРОБЛЕМА -->
   <section>
     <div class="lbl">Проблема</div>
-    <h2>Кожна оплата - ручний контроль</h2>
+    <h2>Кожна оплата — ручний контроль</h2>
     <div class="cloud" id="cloud"></div>
   </section>
 
@@ -436,8 +449,11 @@ $("#task").innerHTML=`Побудувати надійну та ефективн�
 // таблиця «А як…? / Було / Стало»: колонка питань нерухома, повзунок — лише по відповідях
 const cell=t=>`<div class="cell"><span>${t}</span></div>`;
 $("#qcol").innerHTML=`<div class="hd"><b>А як…?</b></div>`+C.rows.map((r,i)=>`<div class="cell"><i>${String(i+1).padStart(2,"0")}</i><span>${r.q}</span></div>`).join("");
-$("#la").innerHTML=`<div class="hd"><b>Стало</b></div>`+C.rows.map(r=>cell(r.after)).join("");
-$("#lb").innerHTML=`<div class="hd"><b>Було</b></div>`+C.rows.map(r=>cell(r.before)).join("");
+// на телефоні питання показується підписом над відповіддю (на десктопі прихований)
+const mq=(r,i)=>`<em class="mq">${String(i+1).padStart(2,"0")} · ${r.q[0].toUpperCase()+r.q.slice(1)}</em>`;
+const cell2=(r,i,k)=>`<div class="cell">${mq(r,i)}<span>${r[k]}</span></div>`;
+$("#la").innerHTML=`<div class="hd"><b>Стало</b></div>`+C.rows.map((r,i)=>cell2(r,i,"after")).join("");
+$("#lb").innerHTML=`<div class="hd"><b>Було</b></div>`+C.rows.map((r,i)=>cell2(r,i,"before")).join("");
 const area=$("#area");let drag=false;
 function setX(x){const b=area.getBoundingClientRect();const p=Math.max(0,Math.min(100,(x-b.left)/b.width*100));$("#lb").style.clipPath=`inset(0 ${100-p}% 0 0)`;$("#h").style.left=p+"%";}
 area.addEventListener("pointerdown",e=>{drag=true;setX(e.clientX);area.setPointerCapture(e.pointerId)});
@@ -456,11 +472,12 @@ function drawChaos(){
   const lineX=parseFloat(getComputedStyle(tl).paddingLeft)-14;
   const y=i=>steps[i].offsetTop+10;
   // пунктир малюється через маску: суцільна лінія в масці «проявляє» пунктирну
-  const shapes=loops.map(([a,b,k,t],i)=>{const x=lineX-10,y1=y(a),y2=y(b),cx=Math.max(4,x-k),wob=(i%2?8:-6);
+  const gut=lineX-10,fit=Math.min(1,(gut-8)/130),showT=gut>160;
+  const shapes=loops.map(([a,b,k,t],i)=>{const x=lineX-10,y1=y(a),y2=y(b),cx=Math.max(4,x-k*fit),wob=(i%2?8:-6)*fit;
     return {d:`M${x} ${y1} C ${cx} ${y1+wob}, ${cx-wob} ${y2-wob}, ${x} ${y2}`,t,tx:cx-8,ty:(y1+y2)/2+4};});
   svg.innerHTML=`<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9" fill="none" stroke="var(--bad)" stroke-width="1.3"/></marker>`+
     shapes.map((s,i)=>`<mask id="m${i}" maskUnits="userSpaceOnUse"><path class="rev" d="${s.d}" stroke="#fff" stroke-width="14" fill="none"/></mask>`).join("")+`</defs>`+
-    shapes.map((s,i)=>`<path class="dash" d="${s.d}" marker-end="url(#ah)" mask="url(#m${i})"/>`+(s.t?`<text x="${s.tx}" y="${s.ty}" text-anchor="end">${s.t}</text>`:"")).join("");
+    shapes.map((s,i)=>`<path class="dash" d="${s.d}" marker-end="url(#ah)" mask="url(#m${i})"/>`+(s.t&&showT?`<text x="${s.tx}" y="${s.ty}" text-anchor="end">${s.t}</text>`:"")).join("");
   svg.querySelectorAll("path.rev").forEach((p,i)=>{const L=p.getTotalLength()+20;p.style.strokeDasharray=L;p.style.strokeDashoffset=L;
     p.getBoundingClientRect();p.style.transition=`stroke-dashoffset .7s ease ${i*.18}s`;p.style.strokeDashoffset=0;});
 }
